@@ -80,7 +80,7 @@ export function ModelSelector() {
       </PopoverTrigger>
       <PopoverContent className="w-72 p-0" align="start">
         <Command>
-          <CommandInput placeholder="Search models..." />
+          <CommandInput placeholder="Select Search Engine..." />
           <CommandList>
             <CommandEmpty>No model found.</CommandEmpty>
             {Object.entries(groupedModels).map(([provider, models]) => (
