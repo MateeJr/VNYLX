@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import 'katex/dist/katex.min.css'
-import ReactMarkdown from 'react-markdown'
+import { Components } from 'react-markdown'
 import rehypeExternalLinks from 'rehype-external-links'
 import rehypeKatex from 'rehype-katex'
 import remarkGfm from 'remark-gfm'
@@ -11,13 +11,6 @@ import { Citing } from './custom-link'
 import { CodeBlock } from './ui/codeblock'
 import { MemoizedReactMarkdown } from './ui/markdown'
 import { useThinkMode } from './think-mode-toggle'
-
-interface CodeProps {
-  node?: any
-  inline?: boolean
-  className?: string
-  children: React.ReactNode[]
-}
 
 export function BotMessage({
   message,
@@ -62,27 +55,30 @@ export function BotMessage({
         className
       )}
       components={{
-        code: ({ node, inline, className, children, ...props }: CodeProps) => {
-          if (children.length) {
-            if (children[0] == '▍') {
-              return (
-                <div className="relative">
-                  <span className="mt-1 cursor-default animate-pulse">▍</span>
-                  {isThinkMode && (
-                    <div className="absolute top-0 left-6 bg-background/95 px-2 py-1 rounded-md border shadow-sm">
-                      <span className="text-sm font-medium text-accent-blue">Thinking...</span>
-                    </div>
-                  )}
-                </div>
-              )
-            }
+        code: function Code({ className, children, ...props }) {
+          const content = String(children).replace(/\n$/, '')
+          
+          if (content === '▍') {
+            return (
+              <div className="relative">
+                <span className="mt-1 cursor-default animate-pulse">▍</span>
+                {isThinkMode && (
+                  <div className="absolute top-0 left-6 bg-background/95 px-2 py-1 rounded-md border shadow-sm">
+                    <span className="text-sm font-medium text-accent-blue">Thinking...</span>
+                  </div>
+                )}
+              </div>
+            )
+          }
 
-            children[0] = (children[0] as string).replace('`▍`', '▍')
+          if (content.includes('`▍`')) {
+            return <span>{content.replace('`▍`', '▍')}</span>
           }
 
           const match = /language-(\w+)/.exec(className || '')
+          const isInline = !match
 
-          if (inline) {
+          if (isInline) {
             return (
               <code className={className} {...props}>
                 {children}
@@ -94,7 +90,7 @@ export function BotMessage({
             <CodeBlock
               key={Math.random()}
               language={(match && match[1]) || ''}
-              value={String(children).replace(/\n$/, '')}
+              value={content}
               {...props}
             />
           )
