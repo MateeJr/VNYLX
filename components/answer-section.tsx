@@ -11,13 +11,17 @@ export type AnswerSectionProps = {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   chatId?: string
+  onDelete?: () => void
+  onRegenerate?: () => void
 }
 
 export function AnswerSection({
   content,
   isOpen,
   onOpenChange,
-  chatId
+  chatId,
+  onDelete,
+  onRegenerate
 }: AnswerSectionProps) {
   const enableShare = process.env.NEXT_PUBLIC_ENABLE_SHARE === 'true'
 
@@ -34,6 +38,8 @@ export function AnswerSection({
         message={content}
         chatId={chatId}
         enableShare={enableShare}
+        onDelete={onDelete}
+        onRegenerate={onRegenerate}
       />
     </div>
   ) : (

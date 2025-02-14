@@ -2,7 +2,6 @@
 
 import { ToolInvocation } from 'ai'
 import { SearchSection } from './search-section'
-import { VideoSearchSection } from './video-search-section'
 import RetrieveSection from './retrieve-section'
 
 interface ToolSectionProps {
@@ -16,14 +15,6 @@ export function ToolSection({ tool, isOpen, onOpenChange }: ToolSectionProps) {
     case 'search':
       return (
         <SearchSection
-          tool={tool}
-          isOpen={isOpen}
-          onOpenChange={onOpenChange}
-        />
-      )
-    case 'video_search':
-      return (
-        <VideoSearchSection
           tool={tool}
           isOpen={isOpen}
           onOpenChange={onOpenChange}

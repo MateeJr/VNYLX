@@ -1,6 +1,5 @@
 'use client'
 
-import { useState, useTransition } from 'react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,6 +13,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { clearChats } from '@/lib/actions/chat'
+import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Spinner } from './ui/spinner'
 
@@ -28,7 +28,7 @@ export function ClearHistory({ empty }: ClearHistoryProps) {
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
         <Button variant="outline" className="w-full" disabled={empty}>
-          Clear History
+          Clear Chat History
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>

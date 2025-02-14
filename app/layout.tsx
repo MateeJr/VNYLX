@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import type { Metadata, Viewport } from 'next'
 import { Inter as FontSans } from 'next/font/google'
 import './globals.css'
+import { NameInputDialog } from '@/components/name-input-dialog'
 
 const fontSans = FontSans({
   subsets: ['latin'],
@@ -61,6 +62,7 @@ export default function RootLayout({
           {enableSaveChatHistory && <Sidebar />}
           <Footer />
           <Toaster />
+          <NameInputDialog />
         </ThemeProvider>
       </body>
     </html>

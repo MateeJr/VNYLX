@@ -9,6 +9,7 @@ import {
 import { sanitizeUrl } from '@/lib/utils'
 import { tool } from 'ai'
 import Exa from 'exa-js'
+import { cookies } from 'next/headers'
 
 export const searchTool = tool({
   description: 'Search the web for information',
@@ -26,6 +27,16 @@ export const searchTool = tool({
     let searchResult: SearchResults
     const searchAPI =
       (process.env.SEARCH_API as 'tavily' | 'exa' | 'searxng') || 'tavily'
+
+    // Check for deep search mode
+    const cookieStore = await cookies()
+    const isDeepSearch = cookieStore.get('deep-search-mode')?.value === 'true'
+
+    // If using Tavily and deep search is enabled, override the parameters
+    if (searchAPI === 'tavily' && isDeepSearch) {
+      max_results = 50
+      search_depth = 'advanced'
+    }
 
     const effectiveSearchDepth =
       searchAPI === 'searxng' &&
@@ -109,6 +120,21 @@ export async function search(
   )
 }
 
+export async function searchMultiple(
+  queries: string[],
+  maxResults: number = 10,
+  searchDepth: 'basic' | 'advanced' = 'basic',
+  includeDomains: string[] = [],
+  excludeDomains: string[] = []
+): Promise<SearchResults[]> {
+  // Execute all searches in parallel
+  const searchPromises = queries.map(query =>
+    search(query, maxResults, searchDepth, includeDomains, excludeDomains)
+  )
+  
+  return Promise.all(searchPromises)
+}
+
 async function tavilySearch(
   query: string,
   maxResults: number = 10,
@@ -129,7 +155,7 @@ async function tavilySearch(
     body: JSON.stringify({
       api_key: apiKey,
       query,
-      max_results: Math.max(maxResults, 5),
+      max_results: Math.max(maxResults, 20),
       search_depth: searchDepth,
       include_images: true,
       include_image_descriptions: includeImageDescriptions,

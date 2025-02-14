@@ -33,11 +33,18 @@ export function SearchSection({
     ? ` [${includeDomains.join(', ')}]`
     : ''
 
+  // Extract multiple queries if present
+  const queries = query?.split(' AND ').map(q => q.trim())
+  const isMultipleQueries = queries && queries.length > 1
+
   const header = (
     <ToolArgsSection
       tool="search"
       number={searchResults?.results?.length}
-    >{`${query}${includeDomainsString}`}</ToolArgsSection>
+      queries={isMultipleQueries ? queries : undefined}
+    >
+      {`${query}${includeDomainsString}`}
+    </ToolArgsSection>
   )
 
   return (
@@ -62,7 +69,10 @@ export function SearchSection({
         <SearchSkeleton />
       ) : searchResults?.results ? (
         <Section title="Sources">
-          <SearchResults results={searchResults.results} />
+          <SearchResults 
+            results={searchResults.results}
+            queries={isMultipleQueries ? queries : undefined}
+          />
         </Section>
       ) : null}
     </CollapsibleMessage>

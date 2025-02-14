@@ -3,6 +3,7 @@ import React from 'react'
 import HistoryContainer from './history-container'
 import { ModeToggle } from './mode-toggle'
 import { IconLogo } from './ui/icons'
+import { AccountButton } from './account-button'
 
 export const Header: React.FC = async () => {
   return (
@@ -14,6 +15,7 @@ export const Header: React.FC = async () => {
         </a>
       </div>
       <div className="flex gap-0.5">
+        <AccountButton />
         <ModeToggle />
         <HistoryContainer location="header" />
       </div>

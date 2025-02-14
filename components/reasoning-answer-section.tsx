@@ -21,13 +21,17 @@ export interface ReasoningAnswerSectionProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   chatId?: string
+  onDelete?: () => void
+  onRegenerate?: () => void
 }
 
 export function ReasoningAnswerSection({
   content,
   isOpen,
   onOpenChange,
-  chatId
+  chatId,
+  onDelete,
+  onRegenerate
 }: ReasoningAnswerSectionProps) {
   const enableShare = process.env.NEXT_PUBLIC_ENABLE_SHARE === 'true'
   const { isLoading } = useChat({ id: CHAT_ID })
@@ -89,6 +93,8 @@ export function ReasoningAnswerSection({
               message={content.answer || ''}
               chatId={chatId}
               enableShare={enableShare}
+              onDelete={onDelete}
+              onRegenerate={onRegenerate}
             />
           </div>
         )}

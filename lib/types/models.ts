@@ -8,7 +8,7 @@ export interface Model {
 export const models: Model[] = [
   {
     id: 'gemini-2.0-flash',
-    name: 'Vnyl-v1-exp',
+    name: 'Vnyl-V1',
     provider: 'Vnyl',
     providerId: 'google'
   }

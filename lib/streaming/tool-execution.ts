@@ -46,6 +46,9 @@ export async function executeToolCall(
             You excel at understanding context to determine when and how to use available tools, including crafting effective search queries.
             Current date: ${new Date().toISOString().split('T')[0]}
 
+            For multiple distinct search queries, combine them with " AND " between each query.
+            For example: "current US president AND elon musk mother name"
+
             Do not include any other text in your response.
             Respond in XML format with the following structure:
             <tool_call>
@@ -87,19 +90,47 @@ export async function executeToolCall(
   dataStream.writeData(toolCallAnnotation)
 
   // Support for search tool only for now
-  const searchResults = await search(
-    toolCall.parameters?.query ?? '',
-    toolCall.parameters?.max_results,
-    toolCall.parameters?.search_depth as 'basic' | 'advanced',
-    toolCall.parameters?.include_domains ?? [],
-    toolCall.parameters?.exclude_domains ?? []
-  )
+  const searchParams = {
+    query: toolCall.parameters?.query ?? '',
+    max_results: toolCall.parameters?.max_results ?? 20,
+    search_depth: (toolCall.parameters?.search_depth as 'basic' | 'advanced') ?? 'basic',
+    include_domains: toolCall.parameters?.include_domains ?? [],
+    exclude_domains: toolCall.parameters?.exclude_domains ?? []
+  }
+
+  // Extract multiple queries if present (queries separated by " AND ")
+  const queries = searchParams.query.split(' AND ').map(q => q.trim())
+  const isMultipleQueries = queries.length > 1
+
+  // If multiple queries, execute them in parallel
+  const results = isMultipleQueries
+    ? await Promise.all(
+        queries.map(query =>
+          search(
+            query,
+            searchParams.max_results,
+            searchParams.search_depth,
+            searchParams.include_domains,
+            searchParams.exclude_domains
+          )
+        )
+      )
+    : [await search(
+        searchParams.query,
+        searchParams.max_results,
+        searchParams.search_depth,
+        searchParams.include_domains,
+        searchParams.exclude_domains
+      )]
 
   const updatedToolCallAnnotation = {
     ...toolCallAnnotation,
     data: {
       ...toolCallAnnotation.data,
-      result: JSON.stringify(searchResults),
+      result: JSON.stringify({
+        results,
+        queries: isMultipleQueries ? queries : undefined
+      }),
       state: 'result'
     }
   }
@@ -116,7 +147,10 @@ export async function executeToolCall(
   const toolCallMessages: CoreMessage[] = [
     {
       role: 'assistant',
-      content: `Tool call result: ${JSON.stringify(searchResults)}`
+      content: `Tool call result: ${JSON.stringify({
+        results,
+        queries: isMultipleQueries ? queries : undefined
+      })}`
     },
     {
       role: 'user',

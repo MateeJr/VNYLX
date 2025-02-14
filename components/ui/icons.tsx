@@ -13,10 +13,19 @@ function IconLogo({ className, ...props }: React.ComponentProps<'svg'>) {
       {...props}
     >
       <circle cx="128" cy="128" r="128" fill="black"></circle>
-      <circle cx="102" cy="128" r="18" fill="white"></circle>
-      <circle cx="154" cy="128" r="18" fill="white"></circle>
+      <text
+        x="128"
+        y="148"
+        fill="white"
+        fontSize="80"
+        textAnchor="middle"
+        dominantBaseline="middle"
+      >
+        V
+      </text>
     </svg>
   )
 }
 
 export { IconLogo }
+

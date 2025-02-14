@@ -1,15 +1,18 @@
-import { JSONValue, Message } from 'ai'
+import { JSONValue } from 'ai'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { RenderMessage } from './render-message'
 import { ToolSection } from './tool-section'
 import { Spinner } from './ui/spinner'
+import { ExtendedMessage } from '@/lib/types/messages'
 
 interface ChatMessagesProps {
-  messages: Message[]
+  messages: ExtendedMessage[]
   data: JSONValue[] | undefined
   onQuerySelect: (query: string) => void
   isLoading: boolean
   chatId?: string
+  onDeleteMessage: (messageId: string) => void
+  onRegenerateMessage: (messageId: string) => void
 }
 
 export function ChatMessages({
@@ -17,7 +20,9 @@ export function ChatMessages({
   data,
   onQuerySelect,
   isLoading,
-  chatId
+  chatId,
+  onDeleteMessage,
+  onRegenerateMessage
 }: ChatMessagesProps) {
   const [openStates, setOpenStates] = useState<Record<string, boolean>>({})
   const manualToolCallId = 'manual-tool-call'
@@ -100,6 +105,8 @@ export function ChatMessages({
             onOpenChange={handleOpenChange}
             onQuerySelect={onQuerySelect}
             chatId={chatId}
+            onDelete={message.role === 'assistant' ? () => onDeleteMessage(message.id) : undefined}
+            onRegenerate={message.role === 'assistant' ? () => onRegenerateMessage(message.id) : undefined}
           />
         </div>
       ))}

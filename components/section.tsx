@@ -86,15 +86,30 @@ export const Section: React.FC<SectionProps> = ({
 export function ToolArgsSection({
   children,
   tool,
-  number
+  number,
+  queries
 }: {
   children: React.ReactNode
   tool: string
   number?: number
+  queries?: string[]
 }) {
+  // If queries are provided, split the children into multiple badges
+  const hasMultipleQueries = queries && queries.length > 0
+
   return (
     <Section size="sm" className="py-0 flex items-center justify-between">
-      <ToolBadge tool={tool}>{children}</ToolBadge>
+      <div className="flex flex-wrap gap-2">
+        {hasMultipleQueries ? (
+          queries.map((query, index) => (
+            <ToolBadge key={index} tool={tool} className="bg-muted">
+              {query}
+            </ToolBadge>
+          ))
+        ) : (
+          <ToolBadge tool={tool}>{children}</ToolBadge>
+        )}
+      </div>
       {number && (
         <StatusIndicator icon={Check} iconClassName="text-green-500">
           {number} results

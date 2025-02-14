@@ -31,7 +31,7 @@ export function createManualToolStreamResponse(config: BaseStreamConfig) {
             searchMode
           )
 
-        const researcherConfig = manualResearcher({
+        const researcherConfig = await manualResearcher({
           messages: [...truncatedMessages, ...toolCallMessages],
           model,
           isSearchEnabled: searchMode

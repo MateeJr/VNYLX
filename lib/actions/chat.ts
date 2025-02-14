@@ -48,12 +48,20 @@ export async function getChats(userId?: string | null) {
         if (typeof plainChat.messages === 'string') {
           try {
             plainChat.messages = JSON.parse(plainChat.messages)
+            // Ensure messages is always an array
+            if (!Array.isArray(plainChat.messages)) {
+              plainChat.messages = []
+            }
           } catch (error) {
             plainChat.messages = []
           }
         }
         if (plainChat.createdAt && !(plainChat.createdAt instanceof Date)) {
           plainChat.createdAt = new Date(plainChat.createdAt)
+        }
+        // Ensure title is a string
+        if (typeof plainChat.title !== 'string') {
+          plainChat.title = 'Untitled Chat'
         }
         return plainChat as Chat
       })

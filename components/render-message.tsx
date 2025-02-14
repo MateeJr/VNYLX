@@ -6,13 +6,24 @@ import RelatedQuestions from './related-questions'
 import { ToolSection } from './tool-section'
 import { UserMessage } from './user-message'
 
+interface ImageData {
+  data: string
+  mimeType: string
+}
+
+interface ExtendedMessage extends Message {
+  images?: ImageData[]
+}
+
 interface RenderMessageProps {
-  message: Message
+  message: ExtendedMessage
   messageId: string
   getIsOpen: (id: string) => boolean
   onOpenChange: (id: string, open: boolean) => void
   onQuerySelect: (query: string) => void
   chatId?: string
+  onDelete?: () => void
+  onRegenerate?: () => void
 }
 
 export function RenderMessage({
@@ -21,7 +32,9 @@ export function RenderMessage({
   getIsOpen,
   onOpenChange,
   onQuerySelect,
-  chatId
+  chatId,
+  onDelete,
+  onRegenerate
 }: RenderMessageProps) {
   const relatedQuestions = useMemo(
     () =>
@@ -100,7 +113,7 @@ export function RenderMessage({
   }, [reasoningAnnotation, message.reasoning])
 
   if (message.role === 'user') {
-    return <UserMessage message={message.content} />
+    return <UserMessage message={message.content} images={message.images} />
   }
 
   if (message.toolInvocations?.length) {
@@ -138,6 +151,8 @@ export function RenderMessage({
           isOpen={getIsOpen(messageId)}
           onOpenChange={open => onOpenChange(messageId, open)}
           chatId={chatId}
+          onDelete={onDelete}
+          onRegenerate={onRegenerate}
         />
       ) : (
         <AnswerSection
@@ -145,6 +160,8 @@ export function RenderMessage({
           isOpen={getIsOpen(messageId)}
           onOpenChange={open => onOpenChange(messageId, open)}
           chatId={chatId}
+          onDelete={onDelete}
+          onRegenerate={onRegenerate}
         />
       )}
       {!message.toolInvocations &&

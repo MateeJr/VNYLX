@@ -70,7 +70,11 @@ export async function handleStreamFinish({
       createdAt: new Date(),
       userId: 'anonymous',
       path: `/search/${chatId}`,
-      title: originalMessages[0].content,
+      title: typeof originalMessages[0].content === 'string' 
+        ? originalMessages[0].content 
+        : Array.isArray(originalMessages[0].content)
+        ? (originalMessages[0].content as Array<{type: string, text?: string}>).find(c => c.type === 'text')?.text || 'New Chat'
+        : (originalMessages[0].content as {text?: string}).text || 'New Chat',
       id: chatId
     }
 

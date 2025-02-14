@@ -1,32 +1,16 @@
-import Link from 'next/link'
 import React from 'react'
-import { SiInstagram, SiWhatsapp } from 'react-icons/si'
-import { Button } from './ui/button'
 
 const Footer: React.FC = () => {
   return (
-    <footer className="w-fit p-1 md:p-2 fixed bottom-0 right-0 hidden lg:block">
-      <div className="flex justify-end">
-        <Button
-          variant={'ghost'}
-          size={'icon'}
-          className="text-muted-foreground/50"
-        >
-          <Link href="https://instagram.com/professional_idiot_25" target="_blank">
-            <SiInstagram size={18} />
-          </Link>
-        </Button>
-        <Button
-          variant={'ghost'}
-          size={'icon'}
-          className="text-muted-foreground/50"
-        >
-          <Link href="https://wa.me/+6285172196650" target="_blank">
-            <SiWhatsapp size={18} />
-          </Link>
-        </Button>
+    <>
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 py-1 z-50 mx-auto px-4">
+        <div className="text-center text-sm text-muted-foreground/50">
+          ©{new Date().getFullYear()} Vnyl-1.0.
+          <br />
+          by Vallian.
+        </div>
       </div>
-    </footer>
+    </>
   )
 }
 

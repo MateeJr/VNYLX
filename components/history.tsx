@@ -50,7 +50,7 @@ export function History({ location, children }: HistoryProps) {
         <SheetHeader>
           <SheetTitle className="flex items-center gap-1 text-sm font-normal mb-2">
             <HistoryIcon size={14} />
-            History
+            Global History
           </SheetTitle>
         </SheetHeader>
         <div className="my-2 h-full pb-12 md:pb-10">
