@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import 'katex/dist/katex.min.css'
+import { ReactMarkdown } from 'react-markdown/lib/react-markdown'
 import rehypeExternalLinks from 'rehype-external-links'
 import rehypeKatex from 'rehype-katex'
 import remarkGfm from 'remark-gfm'
@@ -10,6 +11,13 @@ import { Citing } from './custom-link'
 import { CodeBlock } from './ui/codeblock'
 import { MemoizedReactMarkdown } from './ui/markdown'
 import { useThinkMode } from './think-mode-toggle'
+
+interface CodeProps {
+  node?: any
+  inline?: boolean
+  className?: string
+  children: React.ReactNode[]
+}
 
 export function BotMessage({
   message,
@@ -54,7 +62,7 @@ export function BotMessage({
         className
       )}
       components={{
-        code({ node, inline, className, children, ...props }) {
+        code: ({ node, inline, className, children, ...props }: CodeProps) => {
           if (children.length) {
             if (children[0] == '▍') {
               return (
