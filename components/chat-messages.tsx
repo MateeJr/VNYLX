@@ -85,7 +85,7 @@ export function ChatMessages({
         }))
       }
     }
-  }, [messages, isLoading, isThinkMode])
+  }, [messages, isLoading, isThinkMode, thinkingTimes])
 
   // get last tool data for manual tool call
   const lastToolData = useMemo(() => {
