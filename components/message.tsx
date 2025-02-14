@@ -95,7 +95,11 @@ export function BotMessage({
             />
           )
         },
-        a: Citing
+        a: ({ href, children, className, ...props }) => (
+          <Citing href={href} className={className} {...props}>
+            {children}
+          </Citing>
+        )
       }}
     >
       {message}
