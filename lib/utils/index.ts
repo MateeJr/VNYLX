@@ -11,6 +11,8 @@ import {
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { ExtendedCoreMessage } from '../types'
+import { ExtendedMessage, ImageData } from '../types/messages'
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
@@ -89,14 +91,20 @@ function addToolMessageToChat({
   })
 }
 
+interface ImageAnnotation {
+  type: 'images'
+  data: ImageData[]
+}
+
 export function convertToUIMessages(
   messages: Array<ExtendedCoreMessage>
-): Array<Message> {
+): Array<ExtendedMessage> {
   let pendingAnnotations: JSONValue[] = []
   let pendingReasoning: string | undefined = undefined
   let pendingReasoningTime: number | undefined = undefined
+  let pendingImages: ImageData[] | undefined = undefined
 
-  return messages.reduce((chatMessages: Array<Message>, message) => {
+  return messages.reduce((chatMessages: Array<ExtendedMessage>, message) => {
     // Handle tool messages
     if (message.role === 'tool') {
       return addToolMessageToChat({
@@ -105,7 +113,7 @@ export function convertToUIMessages(
       })
     }
 
-    // Data messages are used to capture annotations, including reasoning.
+    // Data messages are used to capture annotations, including reasoning and images
     if (message.role === 'data') {
       if (
         message.content !== null &&
@@ -129,6 +137,15 @@ export function convertToUIMessages(
               pendingReasoning = content.data as string
               pendingReasoningTime = 0
             }
+          } else if (content.type === 'images' && Array.isArray(content.data)) {
+            const imageData = content.data as Array<{
+              data: string
+              mimeType: string
+            }>
+            pendingImages = imageData.map(img => ({
+              data: img.data,
+              mimeType: img.mimeType
+            }))
           } else {
             pendingAnnotations.push(content)
           }
@@ -189,12 +206,13 @@ export function convertToUIMessages(
     }
 
     // Create the new message. Note: we do not include a top-level "reasoning" property.
-    const newMessage: Message = {
+    const newMessage: ExtendedMessage = {
       id: generateId(),
       role: message.role,
       content: textContent,
       toolInvocations: toolInvocations.length > 0 ? toolInvocations : undefined,
-      annotations: annotations
+      annotations: annotations,
+      images: pendingImages
     }
 
     chatMessages.push(newMessage)
@@ -204,6 +222,7 @@ export function convertToUIMessages(
       pendingAnnotations = []
       pendingReasoning = undefined
       pendingReasoningTime = undefined
+      pendingImages = undefined
     }
 
     return chatMessages
@@ -211,7 +230,7 @@ export function convertToUIMessages(
 }
 
 export function convertToExtendedCoreMessages(
-  messages: Message[]
+  messages: ExtendedMessage[]
 ): ExtendedCoreMessage[] {
   const result: ExtendedCoreMessage[] = []
 
@@ -223,6 +242,18 @@ export function convertToExtendedCoreMessages(
           role: 'data',
           content: annotation
         })
+      })
+    }
+
+    // Convert images to data message
+    if (message.images && message.images.length > 0) {
+      const imageAnnotation: ImageAnnotation = {
+        type: 'images',
+        data: message.images
+      }
+      result.push({
+        role: 'data',
+        content: imageAnnotation as unknown as JSONValue
       })
     }
 
