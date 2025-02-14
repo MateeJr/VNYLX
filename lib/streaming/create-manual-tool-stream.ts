@@ -3,7 +3,8 @@ import {
   createDataStreamResponse,
   DataStreamWriter,
   JSONValue,
-  streamText
+  streamText,
+  CoreMessage
 } from 'ai'
 import { manualResearcher } from '../agents/manual-researcher'
 import { ExtendedCoreMessage } from '../types'
@@ -17,12 +18,19 @@ export function createManualToolStreamResponse(config: BaseStreamConfig) {
     execute: async (dataStream: DataStreamWriter) => {
       const { messages, model, chatId, searchMode } = config
       try {
+        console.log('🔍 Starting manual tool stream:', {
+          model,
+          searchMode,
+          messageCount: messages.length
+        })
+
         const coreMessages = convertToCoreMessages(messages)
         const truncatedMessages = truncateMessages(
           coreMessages,
           getMaxAllowedTokens(model)
         )
 
+        console.log('🔄 Executing tool call...')
         const { toolCallDataAnnotation, toolCallMessages } =
           await executeToolCall(
             truncatedMessages,
@@ -31,8 +39,32 @@ export function createManualToolStreamResponse(config: BaseStreamConfig) {
             searchMode
           )
 
+        console.log('🧠 Tool call results:', {
+          hasToolCallData: !!toolCallDataAnnotation,
+          toolCallMessageCount: toolCallMessages.length,
+          toolCallContent: toolCallMessages.map(m => m.content),
+          toolCallDataAnnotation: toolCallDataAnnotation ? JSON.stringify(toolCallDataAnnotation, null, 2) : null
+        })
+
+        // Add the tool call data annotation first if it exists
+        const allMessages = [
+          ...truncatedMessages,
+          ...(toolCallDataAnnotation ? [toolCallDataAnnotation as CoreMessage] : []),
+          ...toolCallMessages
+        ]
+
+        console.log('📚 All messages being sent to researcher:', 
+          allMessages.map(m => ({
+            role: m.role,
+            contentType: typeof m.content,
+            isData: (m as ExtendedCoreMessage).role === 'data',
+            content: m.content
+          }))
+        )
+
+        console.log('🤖 Configuring researcher...')
         const researcherConfig = await manualResearcher({
-          messages: [...truncatedMessages, ...toolCallMessages],
+          messages: allMessages,
           model,
           isSearchEnabled: searchMode
         })
@@ -41,9 +73,15 @@ export function createManualToolStreamResponse(config: BaseStreamConfig) {
         let reasoningStartTime: number | null = null
         let reasoningDuration: number | null = null
 
+        console.log('📝 Starting text stream...')
         const result = streamText({
           ...researcherConfig,
           onFinish: async result => {
+            console.log('✅ Stream finished:', {
+              hasReasoning: !!result.reasoning,
+              reasoningDuration
+            })
+
             const annotations: ExtendedCoreMessage[] = [
               ...(toolCallDataAnnotation ? [toolCallDataAnnotation] : []),
               {
@@ -74,11 +112,13 @@ export function createManualToolStreamResponse(config: BaseStreamConfig) {
             if (chunkType === 'reasoning') {
               if (reasoningStartTime === null) {
                 reasoningStartTime = Date.now()
+                console.log('🤔 Started reasoning...')
               }
             } else {
               if (reasoningStartTime !== null) {
                 const elapsedTime = Date.now() - reasoningStartTime
                 reasoningDuration = elapsedTime
+                console.log('💭 Finished reasoning:', { elapsedTime })
                 dataStream.writeMessageAnnotation({
                   type: 'reasoning',
                   data: { time: elapsedTime }
@@ -93,11 +133,20 @@ export function createManualToolStreamResponse(config: BaseStreamConfig) {
           sendReasoning: true
         })
       } catch (error) {
-        console.error('Stream execution error:', error)
+        console.error('❌ Stream execution error:', {
+          error,
+          stack: error instanceof Error ? error.stack : undefined,
+          model,
+          searchMode
+        })
+        throw error
       }
     },
     onError: error => {
-      console.error('Stream error:', error)
+      console.error('❌ Stream error:', {
+        error,
+        stack: error instanceof Error ? error.stack : undefined
+      })
       return error instanceof Error ? error.message : String(error)
     }
   })

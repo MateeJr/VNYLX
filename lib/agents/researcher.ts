@@ -34,7 +34,17 @@ export async function researcher({
   searchMode: boolean
 }): Promise<ResearcherReturn> {
   try {
-    const currentDate = new Date().toLocaleString()
+    const date = new Date()
+    const currentDate = date.toLocaleString('id-ID', { 
+      timeZone: 'Asia/Jakarta',
+      hour12: false,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    }) + ' WIB'
     const cookieStore = await cookies()
     const userName = cookieStore.get('user-name')?.value || 'Guest'
     const userInfo = `User name: ${userName}`

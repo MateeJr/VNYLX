@@ -24,6 +24,14 @@ export async function handleStreamFinish({
   annotations = []
 }: HandleStreamFinishParams) {
   try {
+    // Log raw Gemini API response
+    console.log('🤖 Raw Gemini API Response:', {
+      responseMessages: JSON.stringify(responseMessages, null, 2),
+      originalMessages: JSON.stringify(originalMessages, null, 2),
+      model,
+      annotations: JSON.stringify(annotations, null, 2)
+    })
+
     const extendedCoreMessages = convertToExtendedCoreMessages(originalMessages)
     let allAnnotations = [...annotations]
 
@@ -60,7 +68,7 @@ export async function handleStreamFinish({
     const generatedMessages = [
       ...extendedCoreMessages,
       ...responseMessages.slice(0, -1),
-      ...allAnnotations, // Add annotations before the last message
+      ...allAnnotations,
       ...responseMessages.slice(-1)
     ] as ExtendedCoreMessage[]
 

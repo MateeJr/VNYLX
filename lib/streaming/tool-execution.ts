@@ -44,10 +44,12 @@ export async function executeToolCall(
     model: toolCallModel,
     system: `You are an intelligent assistant that analyzes conversations to select the most appropriate tools and their parameters.
             You excel at understanding context to determine when and how to use available tools, including crafting effective search queries.
-            Current date: ${new Date().toISOString().split('T')[0]}
+            Current date: ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', dateStyle: 'short' })} WIB
 
             For multiple distinct search queries, combine them with " AND " between each query.
             For example: "current US president AND elon musk mother name"
+
+            IMPORTANT: DO NOT include any quotes (single or double) in the search query text, as they cause errors with the search API.
 
             Do not include any other text in your response.
             Respond in XML format with the following structure:
@@ -144,19 +146,26 @@ export async function executeToolCall(
     } as JSONValue
   }
 
+  // Check if we're in thinking mode
+  const isThinkingMode = model.includes('thinking-exp')
+
   const toolCallMessages: CoreMessage[] = [
     {
       role: 'assistant',
-      content: `Tool call result: ${JSON.stringify({
+      content: `Here are the search results: ${JSON.stringify({
         results,
         queries: isMultipleQueries ? queries : undefined
       })}`
-    },
-    {
-      role: 'user',
-      content: 'Now answer the user question.'
     }
   ]
+
+  // Then if in thinking mode, add a user message requesting analysis
+  if (isThinkingMode) {
+    toolCallMessages.push({
+      role: 'user',
+      content: 'Please analyze these search results and provide insights...'
+    })
+  }
 
   return { toolCallDataAnnotation, toolCallMessages }
 }

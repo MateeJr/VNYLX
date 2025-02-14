@@ -166,3 +166,24 @@ export async function shareChat(id: string, userId: string = 'anonymous') {
 
   return payload
 }
+
+export async function deleteChat(
+  chatId: string,
+  userId: string = 'anonymous'
+): Promise<{ error?: string }> {
+  try {
+    const redis = await getRedis()
+    const userChatKey = getUserChatKey(userId)
+    const chatKey = `chat:${chatId}`
+
+    const pipeline = redis.pipeline()
+    pipeline.del(chatKey)
+    pipeline.zrem(userChatKey, chatKey)
+    await pipeline.exec()
+
+    revalidatePath('/')
+    return {}
+  } catch (error) {
+    return { error: 'Failed to delete chat' }
+  }
+}
