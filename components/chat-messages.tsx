@@ -4,6 +4,8 @@ import { RenderMessage } from './render-message'
 import { ToolSection } from './tool-section'
 import { Spinner } from './ui/spinner'
 import { ExtendedMessage } from '@/lib/types/messages'
+import { ThinkingSection } from './thinking-section'
+import { useThinkMode } from './think-mode-toggle'
 
 interface ChatMessagesProps {
   messages: ExtendedMessage[]
@@ -24,7 +26,9 @@ export function ChatMessages({
   onDeleteMessage,
   onRegenerateMessage
 }: ChatMessagesProps) {
+  const { isThinkMode } = useThinkMode()
   const [openStates, setOpenStates] = useState<Record<string, boolean>>({})
+  const [thinkingTimes, setThinkingTimes] = useState<Record<string, { start: number, end?: number }>>({})
   const manualToolCallId = 'manual-tool-call'
 
   // Add ref for the messages container
@@ -32,13 +36,21 @@ export function ChatMessages({
 
   // Scroll to bottom function
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'instant' })
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  // Scroll to bottom on mount and when messages change
+  // Combined scroll effect
   useEffect(() => {
-    scrollToBottom()
-  }, [])
+    const lastMessage = messages[messages.length - 1]
+    const shouldScroll = 
+      !lastMessage || // Initial mount
+      (lastMessage.role === 'assistant' && isLoading) || // During streaming
+      messages.length === 1 // First message
+    
+    if (shouldScroll) {
+      scrollToBottom()
+    }
+  }, [messages, isLoading])
 
   useEffect(() => {
     const lastMessage = messages[messages.length - 1]
@@ -46,6 +58,34 @@ export function ChatMessages({
       setOpenStates({ [manualToolCallId]: true })
     }
   }, [messages])
+
+  // Track thinking time for messages
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1]
+    const prevMessage = messages[messages.length - 2]
+    
+    // Only update if we really need to
+    if (lastMessage?.role === 'user' && isLoading && isThinkMode) {
+      const messageId = lastMessage.id
+      if (!thinkingTimes[messageId]?.start) {
+        setThinkingTimes(prev => ({
+          ...prev,
+          [messageId]: { start: Date.now() }
+        }))
+      }
+    } else if (lastMessage?.role === 'assistant' && !isLoading && prevMessage?.role === 'user') {
+      const prevMessageId = prevMessage.id
+      if (thinkingTimes[prevMessageId]?.start && !thinkingTimes[prevMessageId]?.end) {
+        setThinkingTimes(prev => ({
+          ...prev,
+          [prevMessageId]: {
+            start: prev[prevMessageId].start,
+            end: Date.now()
+          }
+        }))
+      }
+    }
+  }, [messages, isLoading, isThinkMode])
 
   // get last tool data for manual tool call
   const lastToolData = useMemo(() => {
@@ -96,7 +136,7 @@ export function ChatMessages({
 
   return (
     <div className="relative mx-auto px-4 w-full">
-      {messages.map(message => (
+      {messages.map((message, index) => (
         <div key={message.id} className="mb-4 flex flex-col gap-4">
           <RenderMessage
             message={message}
@@ -108,20 +148,31 @@ export function ChatMessages({
             onDelete={message.role === 'assistant' ? () => onDeleteMessage(message.id) : undefined}
             onRegenerate={message.role === 'assistant' ? () => onRegenerateMessage(message.id) : undefined}
           />
+          {message.role === 'user' && thinkingTimes[message.id] && (
+            <ThinkingSection
+              isOpen={getIsOpen(`${message.id}-thinking`)}
+              onOpenChange={open => handleOpenChange(`${message.id}-thinking`, open)}
+              startTime={thinkingTimes[message.id].start}
+              endTime={thinkingTimes[message.id].end}
+              isActive={isLoading && index === messages.length - 1}
+            />
+          )}
         </div>
       ))}
-      {showLoading &&
-        (lastToolData ? (
-          <ToolSection
-            key={manualToolCallId}
-            tool={lastToolData}
-            isOpen={getIsOpen(manualToolCallId)}
-            onOpenChange={open => handleOpenChange(manualToolCallId, open)}
-          />
-        ) : (
-          <Spinner />
-        ))}
-      <div ref={messagesEndRef} /> {/* Add empty div as scroll anchor */}
+      {showLoading && (
+        <>
+          {lastToolData && (
+            <ToolSection
+              key={manualToolCallId}
+              tool={lastToolData}
+              isOpen={getIsOpen(manualToolCallId)}
+              onOpenChange={open => handleOpenChange(manualToolCallId, open)}
+            />
+          )}
+          {!lastToolData && !isThinkMode && <Spinner />}
+        </>
+      )}
+      <div ref={messagesEndRef} />
     </div>
   )
 }

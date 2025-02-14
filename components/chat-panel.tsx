@@ -130,6 +130,40 @@ export function ChatPanel({
     fileInputRef.current?.click()
   }
 
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    const items = Array.from(e.clipboardData.items)
+    const imageItems = items.filter(item => item.type.startsWith('image/'))
+    
+    if (imageItems.length === 0) return
+    
+    // Limit to remaining slots (max 4 images total)
+    const remainingSlots = 4 - attachedImages.length
+    const itemsToProcess = imageItems.slice(0, remainingSlots)
+    
+    try {
+      const newImages = await Promise.all(
+        itemsToProcess.map(async (item) => {
+          const file = item.getAsFile()
+          if (!file) throw new Error('Failed to get file from clipboard')
+          
+          const preview = URL.createObjectURL(file)
+          const compressedImage = await compressImage(file)
+          return {
+            file,
+            preview,
+            compressedData: compressedImage.data,
+            compressedMimeType: compressedImage.mimeType
+          }
+        })
+      )
+      
+      setAttachedImages(prev => [...prev, ...newImages])
+    } catch (error) {
+      console.error('Failed to process pasted images:', error)
+      toast.error('Failed to process one or more pasted images')
+    }
+  }
+
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
@@ -304,6 +338,7 @@ export function ChatPanel({
             tabIndex={0}
             onCompositionStart={handleCompositionStart}
             onCompositionEnd={handleCompositionEnd}
+            onPaste={handlePaste}
             placeholder="Type your question here..."
             spellCheck={false}
             value={input}
@@ -366,7 +401,7 @@ export function ChatPanel({
                 size={'icon'}
                 variant={'outline'}
                 className={cn(isLoading && 'animate-pulse', 'rounded-full')}
-                disabled={(input.trim().length === 0 && attachedImages.length === 0) || isLoading}
+                disabled={!isLoading && (input.trim().length === 0 && attachedImages.length === 0)}
                 onClick={isLoading ? stop : undefined}
               >
                 {isLoading ? <Square size={20} /> : <ArrowUp size={20} />}
@@ -380,6 +415,7 @@ export function ChatPanel({
           ref={fileInputRef}
           type="file"
           accept="image/png,image/jpeg,image/webp,image/heic,image/heif"
+          capture="environment"
           multiple
           className="hidden"
           onChange={handleImageSelect}

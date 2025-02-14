@@ -5,9 +5,9 @@ const Footer: React.FC = () => {
     <>
       <div className="fixed top-0 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 py-1 z-50 mx-auto px-4">
         <div className="text-center text-sm text-muted-foreground/50">
-          ©{new Date().getFullYear()} Vnyl-1.0.
+          ©{new Date().getFullYear()} Vnyl-UI-1.5.
           <br />
-          by Vallian.
+          Developed by Vallian.
         </div>
       </div>
     </>

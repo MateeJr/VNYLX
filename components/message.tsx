@@ -9,6 +9,7 @@ import remarkMath from 'remark-math'
 import { Citing } from './custom-link'
 import { CodeBlock } from './ui/codeblock'
 import { MemoizedReactMarkdown } from './ui/markdown'
+import { useThinkMode } from './think-mode-toggle'
 
 export function BotMessage({
   message,
@@ -17,6 +18,7 @@ export function BotMessage({
   message: string
   className?: string
 }) {
+  const { isThinkMode } = useThinkMode()
   // Check if the content contains LaTeX patterns
   const containsLaTeX = /\\\[([\s\S]*?)\\\]|\\\(([\s\S]*?)\\\)/.test(
     message || ''
@@ -56,7 +58,14 @@ export function BotMessage({
           if (children.length) {
             if (children[0] == '▍') {
               return (
-                <span className="mt-1 cursor-default animate-pulse">▍</span>
+                <div className="relative">
+                  <span className="mt-1 cursor-default animate-pulse">▍</span>
+                  {isThinkMode && (
+                    <div className="absolute top-0 left-6 bg-background/95 px-2 py-1 rounded-md border shadow-sm">
+                      <span className="text-sm font-medium text-accent-blue">Thinking...</span>
+                    </div>
+                  )}
+                </div>
               )
             }
 

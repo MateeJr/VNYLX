@@ -8,6 +8,7 @@ import { ChatMessages } from './chat-messages'
 import { ChatPanel } from './chat-panel'
 import { ExtendedMessage, ImageData } from '@/lib/types/messages'
 import { saveChat } from '@/lib/actions/chat'
+import { useThinkMode } from './think-mode-toggle'
 
 export function Chat({
   id,
@@ -18,6 +19,7 @@ export function Chat({
   savedMessages?: ExtendedMessage[]
   query?: string
 }) {
+  const { getModelId } = useThinkMode()
   const {
     messages,
     input,
@@ -34,7 +36,8 @@ export function Chat({
     initialMessages: savedMessages,
     id: CHAT_ID,
     body: {
-      id
+      id,
+      model: getModelId()
     },
     onFinish: () => {
       window.history.replaceState({}, '', `/search/${id}`)
@@ -42,7 +45,12 @@ export function Chat({
     onError: error => {
       toast.error(`Error in chat: ${error.message}`)
     },
-    sendExtraMessageFields: true // Enable extra message fields for images
+    sendExtraMessageFields: true, // Enable extra message fields for images
+    onResponse: (response) => {
+      // Log the model being used from the response headers
+      const model = response.headers.get('x-model-used') || getModelId()
+      console.log('🤖 Using AI Model:', model)
+    }
   })
 
   useEffect(() => {
@@ -175,6 +183,37 @@ export function Chat({
     reload()
   }
 
+  const handleStop = async () => {
+    // Stop the AI stream first
+    stop()
+    
+    // Get the last message (which is the one being streamed)
+    const lastMessage = messages[messages.length - 1]
+    if (lastMessage && lastMessage.role === 'assistant') {
+      // Save the current state of messages to Redis immediately
+      try {
+        await saveChat({
+          id,
+          messages,
+          createdAt: new Date(),
+          userId: 'anonymous',
+          path: `/search/${id}`,
+          title: typeof messages[0]?.content === 'string' 
+            ? messages[0].content 
+            : Array.isArray(messages[0]?.content)
+            ? (messages[0].content as Array<{type: string, text?: string}>).find(c => c.type === 'text')?.text || 'New Chat'
+            : (messages[0]?.content as {text?: string})?.text || 'New Chat'
+        })
+        
+        // Instead of reloading the page, just update the URL to stay on the current chat
+        window.history.replaceState({}, '', `/search/${id}`)
+      } catch (error) {
+        console.error('Failed to save chat after stop:', error)
+        toast.error('Failed to save changes to history')
+      }
+    }
+  }
+
   return (
     <div className="flex flex-col w-full max-w-3xl pt-14 pb-60 mx-auto stretch">
       <ChatMessages
@@ -193,7 +232,7 @@ export function Chat({
         isLoading={isLoading}
         messages={messages}
         setMessages={setMessages}
-        stop={stop}
+        stop={handleStop}
         query={query}
         append={append}
       />
