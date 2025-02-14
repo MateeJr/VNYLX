@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import 'katex/dist/katex.min.css'
-import { ReactMarkdown } from 'react-markdown/lib/react-markdown'
+import ReactMarkdown from 'react-markdown'
 import rehypeExternalLinks from 'rehype-external-links'
 import rehypeKatex from 'rehype-katex'
 import remarkGfm from 'remark-gfm'
